@@ -5,17 +5,22 @@ use std::{
 };
 
 pub mod exact;
+pub mod kdtree;
 
 use early_ann::Algorithm;
 use exact::Exact;
+use kdtree::KDTree;
 
 fn main() {
     let data = load_dataset("./datasets/glove.twitter.27B.25d.txt").unwrap();
     println!("Loaded dataset. Found {} vectors.", data.len());
 
-    let exact = Exact::load(data);
-    let result = exact.search("sad");
-    println!("{:?}", result);
+    // let exact = Exact::load(data);
+    // let result = exact.search("sad");
+    // println!("{:?}", result);
+
+    let kdtree = KDTree::load(data);
+    println!("{:?}", kdtree.len());
 }
 
 fn load_dataset(path: &str) -> io::Result<HashMap<String, Vec<f32>>> {
