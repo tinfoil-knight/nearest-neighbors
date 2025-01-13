@@ -1,6 +1,6 @@
 use std::{cmp::Ordering, collections::HashMap};
 
-use early_ann::{Algorithm, LimitedHeap, TOP_K_LIMIT};
+use nearest_neighbors::{Algorithm, LimitedHeap, TOP_K_LIMIT};
 
 pub struct KDTree {
     map: HashMap<String, Vec<f32>>,
@@ -11,7 +11,7 @@ impl Algorithm for KDTree {
     fn search(&self, query: &str) -> Option<Vec<String>> {
         self.map
             .get(query)
-            .map(|target| self.nearest_neighbours(target))
+            .map(|target| self.nearest_neighbors(target))
     }
 }
 
@@ -65,7 +65,7 @@ impl KDTree {
         })
     }
 
-    fn nearest_neighbours(&self, target: &[f32]) -> Vec<String> {
+    fn nearest_neighbors(&self, target: &[f32]) -> Vec<String> {
         let num_dimensions = target.len();
 
         let mut k_max_heap: LimitedHeap<HeapItem> = LimitedHeap::new(TOP_K_LIMIT);

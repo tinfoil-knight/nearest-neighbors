@@ -8,9 +8,9 @@ use std::{
 pub mod exact;
 pub mod kdtree;
 
-use early_ann::Algorithm;
 use exact::Exact;
 use kdtree::KDTree;
+use nearest_neighbors::Algorithm;
 
 fn main() {
     let data = load_dataset("./datasets/glove.twitter.27B.25d.txt").unwrap();

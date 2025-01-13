@@ -1,5 +1,5 @@
 [package]
-name = "early-ann"
+name = "nearest-neighbors"
 version = "0.1.0"
 edition = "2021"
 

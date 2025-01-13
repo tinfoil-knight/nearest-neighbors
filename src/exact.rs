@@ -3,7 +3,7 @@ use std::{
     collections::HashMap,
 };
 
-use early_ann::{Algorithm, LimitedHeap, TOP_K_LIMIT};
+use nearest_neighbors::{Algorithm, LimitedHeap, TOP_K_LIMIT};
 
 pub struct Exact {
     data: HashMap<String, Vec<f32>>,

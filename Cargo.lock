@@ -3,5 +3,5 @@
 version = 3
 
 [[package]]
-name = "early-ann"
+name = "nearest-neighbors"
 version = "0.1.0"
