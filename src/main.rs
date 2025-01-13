@@ -7,10 +7,12 @@ use std::{
 
 pub mod exact;
 pub mod kdtree;
+pub mod vptree;
 
 use exact::Exact;
 use kdtree::KDTree;
 use nearest_neighbors::Algorithm;
+use vptree::VPTree;
 
 fn main() {
     let data = load_dataset("./datasets/glove.twitter.27B.25d.txt").unwrap();
@@ -65,6 +67,7 @@ fn get_search_algorithm(
     match flag {
         "exact" => Box::new(Exact::load(data)),
         "kdtree" => Box::new(KDTree::load(data)),
+        "vptree" => Box::new(VPTree::load(data)),
         _ => Box::new(Exact::load(data)),
     }
 }
