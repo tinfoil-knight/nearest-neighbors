@@ -1,43 +1,38 @@
-use std::{
-    cmp::Reverse,
-    collections::{BinaryHeap, HashMap},
-};
+use std::collections::{BinaryHeap, HashMap};
 
-pub const TOP_K_LIMIT: usize = 10;
+pub const TOP_K_LIMIT: usize = 5;
 
 pub trait Algorithm {
     fn load(data: HashMap<String, Vec<f32>>) -> Self;
     fn search(&self, query: &str) -> Option<Vec<&String>>;
 }
 
-pub struct KMinHeap<T> {
-    heap: BinaryHeap<Reverse<T>>,
+pub struct LimitedHeap<T> {
+    heap: BinaryHeap<T>,
     limit: usize,
 }
 
-impl<T: Ord> KMinHeap<T> {
-    pub fn new(k: usize) -> Self {
+impl<T: Ord> LimitedHeap<T> {
+    pub fn new(limit: usize) -> Self {
         Self {
-            heap: BinaryHeap::with_capacity(k),
-            limit: k,
+            heap: BinaryHeap::with_capacity(limit),
+            limit,
         }
     }
 
     pub fn insert(&mut self, value: T) {
         if self.heap.len() < self.limit {
-            self.heap.push(Reverse(value));
-        } else if let Some(Reverse(top)) = self.heap.peek() {
-            if &value > top {
+            self.heap.push(value);
+        } else if let Some(top) = self.heap.peek() {
+            if &value < top {
                 self.heap.pop();
-                self.heap.push(Reverse(value))
+                self.heap.push(value)
             }
         }
     }
 
-    pub fn get_top_k(&self) -> Vec<&T> {
-        let mut result: Vec<&T> = self.heap.iter().map(|Reverse(v)| v).collect();
-        result.sort_by(|a, b| b.cmp(a));
-        result
+    pub fn iter(&self) -> impl Iterator<Item = &T> {
+        self.heap.iter()
     }
 
     pub fn len(&self) -> usize {
@@ -54,21 +49,23 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_k_min_heap_insertion() {
-        let mut k_min_heap = KMinHeap::new(3);
+    fn test_heap_insertion() {
+        let mut heap = LimitedHeap::new(3);
 
-        k_min_heap.insert(10);
-        k_min_heap.insert(20);
-        k_min_heap.insert(5);
-        k_min_heap.insert(1);
-        k_min_heap.insert(15);
+        heap.insert(10);
+        heap.insert(20);
+        heap.insert(5);
+        heap.insert(1);
+        heap.insert(15);
 
-        let top_k = k_min_heap.get_top_k();
+        let mut top_k: Vec<&i32> = heap.iter().collect();
 
         assert_eq!(top_k.len(), 3);
 
-        assert_eq!(*top_k[0], 20);
-        assert_eq!(*top_k[1], 15);
-        assert_eq!(*top_k[2], 10);
+        top_k.sort_by(|a, b| b.cmp(a));
+
+        assert_eq!(*top_k[0], 10);
+        assert_eq!(*top_k[1], 5);
+        assert_eq!(*top_k[2], 1);
     }
 }

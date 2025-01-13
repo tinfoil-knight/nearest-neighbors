@@ -1,6 +1,9 @@
-use std::{cmp::Ordering, collections::HashMap};
+use std::{
+    cmp::{Ordering, Reverse},
+    collections::HashMap,
+};
 
-use early_ann::{Algorithm, KMinHeap, TOP_K_LIMIT};
+use early_ann::{Algorithm, LimitedHeap, TOP_K_LIMIT};
 
 pub struct Exact {
     data: HashMap<String, Vec<f32>>,
@@ -13,27 +16,27 @@ impl Algorithm for Exact {
 
     fn search(&self, query: &str) -> Option<Vec<&String>> {
         if let Some(a) = self.data.get(query) {
-            let a_mag = a.iter().map(|x| x * x).sum::<f32>();
-            let mut k_min_heap: KMinHeap<HeapItem> = KMinHeap::new(TOP_K_LIMIT);
+            let a_mag = a.iter().map(|x| x * x).sum::<f32>().sqrt();
+            let mut k_min_heap: LimitedHeap<Reverse<HeapItem>> = LimitedHeap::new(TOP_K_LIMIT);
 
             for (key, b) in self.data.iter() {
-                let b_mag = b.iter().map(|x| x * x).sum::<f32>();
-                // We're not taking the sqrt of the magnitude since that's more efficient.
-                // That's why this is a reduced metric. Relative rankings are preserved.
-                let reduced_cosine_similarity: f32 = if a_mag == 0.0 || b_mag == 0.0 {
+                let b_mag = b.iter().map(|x| x * x).sum::<f32>().sqrt();
+                let cosine_similarity: f32 = if a_mag == 0.0 || b_mag == 0.0 {
                     0.0
                 } else {
                     let dot_product: f32 = a.iter().zip(b.iter()).map(|(x, y)| x * y).sum();
                     dot_product / (a_mag * b_mag)
                 };
 
-                k_min_heap.insert(HeapItem(reduced_cosine_similarity, key));
+                k_min_heap.insert(Reverse(HeapItem(cosine_similarity, key)));
             }
 
             if k_min_heap.is_empty() {
                 None
             } else {
-                Some(k_min_heap.get_top_k().iter().map(|v| v.1).collect())
+                let mut v: Vec<&HeapItem> = k_min_heap.iter().map(|Reverse(item)| item).collect();
+                v.sort_by(|a, b| b.cmp(a));
+                Some(v.iter().map(|x| x.1).collect())
             }
         } else {
             None
