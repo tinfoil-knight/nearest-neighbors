@@ -10,11 +10,7 @@ pub struct Exact {
 }
 
 impl Algorithm for Exact {
-    fn load(data: HashMap<String, Vec<f32>>) -> Self {
-        Self { data }
-    }
-
-    fn search(&self, query: &str) -> Option<Vec<&String>> {
+    fn search(&self, query: &str) -> Option<Vec<String>> {
         if let Some(a) = self.data.get(query) {
             let a_mag = a.iter().map(|x| x * x).sum::<f32>().sqrt();
             let mut k_min_heap: LimitedHeap<Reverse<HeapItem>> = LimitedHeap::new(TOP_K_LIMIT);
@@ -28,7 +24,7 @@ impl Algorithm for Exact {
                     dot_product / (a_mag * b_mag)
                 };
 
-                k_min_heap.insert(Reverse(HeapItem(cosine_similarity, key)));
+                k_min_heap.push(Reverse(HeapItem(cosine_similarity, key)));
             }
 
             if k_min_heap.is_empty() {
@@ -36,11 +32,17 @@ impl Algorithm for Exact {
             } else {
                 let mut v: Vec<&HeapItem> = k_min_heap.iter().map(|Reverse(item)| item).collect();
                 v.sort_by(|a, b| b.cmp(a));
-                Some(v.iter().map(|x| x.1).collect())
+                Some(v.iter().map(|x| x.1.to_owned()).collect())
             }
         } else {
             None
         }
+    }
+}
+
+impl Exact {
+    pub fn load(data: HashMap<String, Vec<f32>>) -> Self {
+        Self { data }
     }
 }
 

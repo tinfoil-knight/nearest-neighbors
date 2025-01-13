@@ -1,6 +1,6 @@
-use std::collections::HashMap;
+use std::{cmp::Ordering, collections::HashMap};
 
-use early_ann::Algorithm;
+use early_ann::{Algorithm, LimitedHeap, TOP_K_LIMIT};
 
 pub struct KDTree {
     map: HashMap<String, Vec<f32>>,
@@ -8,7 +8,15 @@ pub struct KDTree {
 }
 
 impl Algorithm for KDTree {
-    fn load(data: HashMap<String, Vec<f32>>) -> Self {
+    fn search(&self, query: &str) -> Option<Vec<String>> {
+        self.map
+            .get(query)
+            .map(|target| self.nearest_neighbours(target))
+    }
+}
+
+impl KDTree {
+    pub fn load(data: HashMap<String, Vec<f32>>) -> Self {
         // ? : can we avoid maintaining multiple copies of data here
         let points: Vec<TreeItem> = data
             .iter()
@@ -19,16 +27,6 @@ impl Algorithm for KDTree {
         Self { map: data, tree }
     }
 
-    fn search(&self, query: &str) -> Option<Vec<&String>> {
-        if let Some(_a) = self.map.get(query) {
-            todo!()
-        } else {
-            None
-        }
-    }
-}
-
-impl KDTree {
     fn build(mut points: Vec<TreeItem>, depth: usize) -> BinaryTree<TreeItem> {
         if points.is_empty() {
             BinaryTree(None)
@@ -62,11 +60,52 @@ impl KDTree {
     }
 
     fn len_helper<T>(tree: &BinaryTree<T>) -> usize {
-        if let Some(node) = &tree.0 {
+        tree.0.as_ref().map_or(0, |node| {
             1 + Self::len_helper(&node.left) + Self::len_helper(&node.right)
-        } else {
-            0
+        })
+    }
+
+    fn nearest_neighbours(&self, target: &[f32]) -> Vec<String> {
+        let num_dimensions = target.len();
+
+        let mut k_max_heap: LimitedHeap<HeapItem> = LimitedHeap::new(TOP_K_LIMIT);
+        let mut stack = vec![(&self.tree, 0)];
+
+        while let Some((node, depth)) = stack.pop() {
+            if let Some(point) = &node.0 {
+                let axis = depth % num_dimensions;
+                let dist = target
+                    .iter()
+                    .zip(point.value.0.iter())
+                    .map(|(x, y)| f32::powi(x - y, 2))
+                    .sum::<f32>()
+                    .sqrt();
+
+                k_max_heap.push(HeapItem(dist, &point.value.1));
+
+                let next_branch;
+                let opposite_branch;
+
+                if target[axis] < point.value.0[axis] {
+                    (next_branch, opposite_branch) = (&point.left, &point.right);
+                } else {
+                    (next_branch, opposite_branch) = (&point.right, &point.left);
+                }
+
+                stack.push((next_branch, depth + 1));
+
+                if (k_max_heap.len() < TOP_K_LIMIT)
+                    || (f32::powi(target[axis] - point.value.0[axis], 2)
+                        < k_max_heap.peek().unwrap().0)
+                {
+                    stack.push((opposite_branch, depth + 1));
+                }
+            }
         }
+
+        let mut v: Vec<&HeapItem> = k_max_heap.iter().collect();
+        v.sort();
+        v.iter().map(|x| x.1.to_owned()).collect()
     }
 }
 
@@ -82,3 +121,27 @@ struct Node<T> {
 
 #[derive(Debug, Clone)]
 struct TreeItem(Vec<f32>, String);
+
+#[derive(Debug)]
+struct HeapItem<'a>(f32, &'a String);
+
+impl PartialEq for HeapItem<'_> {
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
+    }
+}
+
+impl Eq for HeapItem<'_> {}
+
+impl PartialOrd for HeapItem<'_> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for HeapItem<'_> {
+    fn cmp(&self, other: &Self) -> Ordering {
+        // ignoring NaN for f32
+        self.0.partial_cmp(&other.0).unwrap()
+    }
+}

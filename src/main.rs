@@ -1,5 +1,6 @@
 use std::{
     collections::HashMap,
+    env,
     fs::File,
     io::{self, BufRead, BufReader},
 };
@@ -9,18 +10,16 @@ pub mod kdtree;
 
 use early_ann::Algorithm;
 use exact::Exact;
-// use kdtree::KDTree;
+use kdtree::KDTree;
 
 fn main() {
     let data = load_dataset("./datasets/glove.twitter.27B.25d.txt").unwrap();
     println!("Loaded dataset. Found {} vectors.", data.len());
 
-    let exact = Exact::load(data);
-    let result = exact.search("happy");
-    println!("{:?}", result);
-
-    // let kdtree = KDTree::load(data);
-    // println!("{:?}", kdtree.len());
+    let args: Vec<String> = env::args().collect();
+    let algorithm = get_search_algorithm(args.get(1), data);
+    let results = algorithm.search("happy");
+    println!("Results: {:?}", results);
 }
 
 fn load_dataset(path: &str) -> io::Result<HashMap<String, Vec<f32>>> {
@@ -52,4 +51,20 @@ fn load_dataset(path: &str) -> io::Result<HashMap<String, Vec<f32>>> {
     }
 
     Ok(word_map)
+}
+
+fn get_search_algorithm(
+    flag: Option<&String>,
+    data: HashMap<String, Vec<f32>>,
+) -> Box<dyn Algorithm> {
+    let flag = flag
+        .map_or("--exact", |v| v)
+        .strip_prefix("--")
+        .map_or("exact", |v| v);
+
+    match flag {
+        "exact" => Box::new(Exact::load(data)),
+        "kdtree" => Box::new(KDTree::load(data)),
+        _ => Box::new(Exact::load(data)),
+    }
 }
