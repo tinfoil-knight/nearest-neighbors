@@ -1,7 +1,7 @@
 use core::f32;
 use std::{cmp::Ordering, collections::HashMap, f32::NAN};
 
-use nearest_neighbors::{distance, Algorithm, BinaryTree, LimitedHeap, Node};
+use crate::{distance, Algorithm, BinaryTree, LimitedHeap, Node};
 use rand::Rng;
 
 pub struct VPTree {

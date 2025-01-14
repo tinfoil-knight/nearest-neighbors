@@ -5,21 +5,19 @@ use std::{
     io::{self, BufRead, BufReader},
 };
 
-pub mod exact;
-pub mod kdtree;
-pub mod vptree;
-
-use exact::Exact;
-use kdtree::KDTree;
-use nearest_neighbors::Algorithm;
-use vptree::VPTree;
+use nearest_neighbors::get_search_algorithm;
 
 fn main() {
     let data = load_dataset("./datasets/glove.twitter.27B.25d.txt").unwrap();
     println!("Loaded dataset. Found {} vectors.", data.len());
 
     let args: Vec<String> = env::args().collect();
-    let algorithm = get_search_algorithm(args.get(1), data);
+    let flag = args
+        .get(1)
+        .map_or("--exact", |v| v)
+        .strip_prefix("--")
+        .map_or("exact", |v| v);
+    let algorithm = get_search_algorithm(flag, data);
     let results = algorithm.search("happy", 5);
     println!("Results: {:?}", results);
 }
@@ -53,21 +51,4 @@ fn load_dataset(path: &str) -> io::Result<HashMap<String, Vec<f32>>> {
     }
 
     Ok(word_map)
-}
-
-fn get_search_algorithm(
-    flag: Option<&String>,
-    data: HashMap<String, Vec<f32>>,
-) -> Box<dyn Algorithm> {
-    let flag = flag
-        .map_or("--exact", |v| v)
-        .strip_prefix("--")
-        .map_or("exact", |v| v);
-
-    match flag {
-        "exact" => Box::new(Exact::load(data)),
-        "kdtree" => Box::new(KDTree::load(data)),
-        "vptree" => Box::new(VPTree::load(data)),
-        _ => Box::new(Exact::load(data)),
-    }
 }

@@ -1,6 +1,6 @@
 use std::{cmp::Ordering, collections::HashMap};
 
-use nearest_neighbors::{distance, Algorithm, BinaryTree, LimitedHeap, Node};
+use crate::{distance, Algorithm, BinaryTree, LimitedHeap, Node};
 
 pub struct KDTree {
     map: HashMap<String, Vec<f32>>,
