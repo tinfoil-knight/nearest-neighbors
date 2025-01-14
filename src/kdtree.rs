@@ -1,6 +1,6 @@
 use std::{cmp::Ordering, collections::HashMap};
 
-use nearest_neighbors::{distance, Algorithm, BinaryTree, LimitedHeap, Node, TOP_K_LIMIT};
+use nearest_neighbors::{distance, Algorithm, BinaryTree, LimitedHeap, Node};
 
 pub struct KDTree {
     map: HashMap<String, Vec<f32>>,
@@ -8,10 +8,10 @@ pub struct KDTree {
 }
 
 impl Algorithm for KDTree {
-    fn search(&self, query: &str) -> Option<Vec<String>> {
+    fn search(&self, query: &str, k: usize) -> Option<Vec<String>> {
         self.map
             .get(query)
-            .map(|target| self.nearest_neighbors(target))
+            .map(|target| self.nearest_neighbors(target, k))
     }
 }
 
@@ -51,10 +51,10 @@ impl KDTree {
         }
     }
 
-    fn nearest_neighbors(&self, target: &[f32]) -> Vec<String> {
+    fn nearest_neighbors(&self, target: &[f32], k: usize) -> Vec<String> {
         let num_dimensions = target.len();
 
-        let mut k_max_heap: LimitedHeap<HeapItem> = LimitedHeap::new(TOP_K_LIMIT);
+        let mut k_max_heap: LimitedHeap<HeapItem> = LimitedHeap::new(k);
         let mut stack = vec![(&self.tree, 0)];
 
         while let Some((node, depth)) = stack.pop() {
@@ -75,7 +75,7 @@ impl KDTree {
 
                 stack.push((next_branch, depth + 1));
 
-                if (k_max_heap.len() < TOP_K_LIMIT)
+                if (k_max_heap.len() < k)
                     || (f32::powi(target[axis] - point.value.0[axis], 2)
                         < k_max_heap.peek().unwrap().0)
                 {

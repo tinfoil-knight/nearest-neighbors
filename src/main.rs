@@ -20,7 +20,7 @@ fn main() {
 
     let args: Vec<String> = env::args().collect();
     let algorithm = get_search_algorithm(args.get(1), data);
-    let results = algorithm.search("happy");
+    let results = algorithm.search("happy", 5);
     println!("Results: {:?}", results);
 }
 

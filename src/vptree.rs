@@ -9,7 +9,7 @@ pub struct VPTree {
 }
 
 impl Algorithm for VPTree {
-    fn search(&self, query: &str) -> Option<Vec<String>> {
+    fn search(&self, query: &str, k: usize) -> Option<Vec<String>> {
         // todo:
         None
     }

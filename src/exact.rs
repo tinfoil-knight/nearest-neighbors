@@ -3,17 +3,17 @@ use std::{
     collections::HashMap,
 };
 
-use nearest_neighbors::{Algorithm, LimitedHeap, TOP_K_LIMIT};
+use nearest_neighbors::{Algorithm, LimitedHeap};
 
 pub struct Exact {
     data: HashMap<String, Vec<f32>>,
 }
 
 impl Algorithm for Exact {
-    fn search(&self, query: &str) -> Option<Vec<String>> {
+    fn search(&self, query: &str, k: usize) -> Option<Vec<String>> {
         if let Some(a) = self.data.get(query) {
             let a_mag = a.iter().map(|x| x * x).sum::<f32>().sqrt();
-            let mut k_min_heap: LimitedHeap<Reverse<HeapItem>> = LimitedHeap::new(TOP_K_LIMIT);
+            let mut k_min_heap: LimitedHeap<Reverse<HeapItem>> = LimitedHeap::new(k);
 
             for (key, b) in self.data.iter() {
                 let b_mag = b.iter().map(|x| x * x).sum::<f32>().sqrt();

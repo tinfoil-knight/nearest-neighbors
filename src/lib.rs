@@ -1,9 +1,10 @@
-use std::{collections::BinaryHeap, ops::Deref};
-
-pub const TOP_K_LIMIT: usize = 5;
+use std::{
+    collections::BinaryHeap,
+    ops::{Deref, DerefMut},
+};
 
 pub trait Algorithm {
-    fn search(&self, query: &str) -> Option<Vec<String>>;
+    fn search(&self, query: &str, k: usize) -> Option<Vec<String>>;
 }
 
 pub struct LimitedHeap<T> {
@@ -36,6 +37,12 @@ impl<T> Deref for LimitedHeap<T> {
 
     fn deref(&self) -> &Self::Target {
         &self.heap
+    }
+}
+
+impl<T> DerefMut for LimitedHeap<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.heap
     }
 }
 
@@ -87,14 +94,10 @@ mod tests {
         heap.push(1);
         heap.push(15);
 
-        let mut top_k: Vec<&i32> = heap.iter().collect();
+        assert_eq!(heap.iter().collect::<Vec<&i32>>().len(), 3);
 
-        assert_eq!(top_k.len(), 3);
-
-        top_k.sort_by(|a, b| b.cmp(a));
-
-        assert_eq!(*top_k[0], 10);
-        assert_eq!(*top_k[1], 5);
-        assert_eq!(*top_k[2], 1);
+        assert_eq!(heap.pop(), Some(10));
+        assert_eq!(heap.pop(), Some(5));
+        assert_eq!(heap.pop(), Some(1));
     }
 }
