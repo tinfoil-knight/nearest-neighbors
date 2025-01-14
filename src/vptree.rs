@@ -1,6 +1,7 @@
-use std::{collections::HashMap, f32::NAN};
+use core::f32;
+use std::{cmp::Ordering, collections::HashMap, f32::NAN};
 
-use nearest_neighbors::{distance, Algorithm, BinaryTree, Node};
+use nearest_neighbors::{distance, Algorithm, BinaryTree, LimitedHeap, Node};
 use rand::Rng;
 
 pub struct VPTree {
@@ -10,8 +11,9 @@ pub struct VPTree {
 
 impl Algorithm for VPTree {
     fn search(&self, query: &str, k: usize) -> Option<Vec<String>> {
-        // todo:
-        None
+        self.map
+            .get(query)
+            .map(|target| self.nearest_neighbors(target, k))
     }
 }
 
@@ -31,7 +33,10 @@ impl VPTree {
             return BinaryTree(None);
         }
 
-        let vantage_pt = points.remove(Self::select_vp(&points));
+        let select_vp =
+            |s: &[(Vec<f32>, String)]| -> usize { rand::thread_rng().gen_range(0..s.len()) };
+
+        let vantage_pt = points.remove(select_vp(&points));
 
         if points.is_empty() {
             return BinaryTree(Some(Box::new(Node {
@@ -70,11 +75,81 @@ impl VPTree {
         })))
     }
 
-    fn select_vp<T>(s: &[T]) -> usize {
-        let mut rng = rand::thread_rng();
-        rng.gen_range(0..s.len())
+    fn nearest_neighbors(&self, target: &[f32], k: usize) -> Vec<String> {
+        let mut tau = f32::INFINITY; // threshold distance for target
+
+        let mut stack = vec![&self.tree];
+        let mut neighbors: LimitedHeap<HeapItem> = LimitedHeap::new(k);
+
+        while let Some(node) = stack.pop() {
+            let Some(node) = &node.0 else {
+                continue;
+            };
+
+            let d = distance(target, &node.value.1);
+
+            if d < tau {
+                neighbors.push(HeapItem(d, (&node.value.1, &node.value.2)));
+                let HeapItem(_, farthest_nearest_neighbor) = neighbors.peek().unwrap();
+                tau = distance(target, farthest_nearest_neighbor.0);
+            }
+
+            if node.left.0.is_none() && node.right.0.is_none() {
+                // i.e. if is leaf
+                continue;
+            }
+
+            let mu = node.value.0; // division boundary for current vantage point
+
+            // inside circle
+            if d < mu {
+                if d < mu + tau {
+                    stack.push(&node.left);
+                }
+                if d >= mu - tau {
+                    stack.push(&node.right);
+                }
+            } else {
+                // the order is important because it'll reduce tau earlier
+                // and prevent us from exploring unnecessary branches
+                if d >= mu - tau {
+                    stack.push(&node.right);
+                }
+                if d < mu + tau {
+                    stack.push(&node.left);
+                }
+            };
+        }
+
+        let mut v: Vec<&HeapItem> = neighbors.iter().collect();
+        v.sort();
+        v.iter().map(|HeapItem(_, x)| x.1.to_owned()).collect()
     }
 }
 
 #[derive(Debug, Clone)]
 struct TreeItem(f32, Vec<f32>, String);
+
+#[derive(Debug)]
+struct HeapItem<'a>(f32, (&'a Vec<f32>, &'a String));
+
+impl PartialEq for HeapItem<'_> {
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
+    }
+}
+
+impl Eq for HeapItem<'_> {}
+
+impl PartialOrd for HeapItem<'_> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for HeapItem<'_> {
+    fn cmp(&self, other: &Self) -> Ordering {
+        // ignoring NaN for f32
+        self.0.partial_cmp(&other.0).unwrap()
+    }
+}
