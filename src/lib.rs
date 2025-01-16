@@ -1,5 +1,7 @@
 use std::{
     collections::{BinaryHeap, HashMap},
+    fs::File,
+    io::{self, BufRead, BufReader},
     ops::{Deref, DerefMut},
 };
 
@@ -22,6 +24,37 @@ pub fn get_search_algorithm(flag: &str, data: HashMap<String, Vec<f32>>) -> Box<
         "vptree" => Box::new(VPTree::load(data)),
         _ => Box::new(Exact::load(data)),
     }
+}
+
+pub fn load_dataset(path: &str) -> io::Result<HashMap<String, Vec<f32>>> {
+    let input = File::open(path)?;
+    let reader = BufReader::new(input);
+
+    let mut word_map = HashMap::new();
+    let mut dimensions = 0;
+
+    for line in reader.lines() {
+        let line = line?;
+
+        let Some((word, vector_s)) = line.split_once(' ') else {
+            panic!("invalid line");
+        };
+
+        let vector: Vec<f32> = vector_s
+            .split_terminator(' ')
+            .map(|s| s.parse().unwrap())
+            .collect();
+
+        if dimensions == 0 {
+            dimensions = vector.len();
+        }
+
+        assert_eq!(dimensions, vector.len());
+
+        word_map.insert(word.to_string(), vector);
+    }
+
+    Ok(word_map)
 }
 
 pub struct LimitedHeap<T> {
