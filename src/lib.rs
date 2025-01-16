@@ -17,7 +17,10 @@ pub trait Algorithm {
     fn search(&self, query: &str, k: usize) -> Option<Vec<String>>;
 }
 
-pub fn get_search_algorithm(flag: &str, data: HashMap<String, Vec<f32>>) -> Box<dyn Algorithm> {
+pub fn get_search_algorithm<'a>(
+    flag: &str,
+    data: &'a HashMap<String, Vec<f32>>,
+) -> Box<dyn Algorithm + 'a> {
     match flag {
         "exact" => Box::new(Exact::load(data)),
         "kdtree" => Box::new(KDTree::load(data)),

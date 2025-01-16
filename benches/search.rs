@@ -19,11 +19,7 @@ fn bench_search(c: &mut Criterion) {
 
     let k = 5; // no. of neighbours
 
-    let (exact, kdtree, vptree) = (
-        Exact::load(data.clone()),
-        KDTree::load(data.clone()),
-        VPTree::load(data.clone()),
-    );
+    let (exact, kdtree, vptree) = (Exact::load(&data), KDTree::load(&data), VPTree::load(&data));
 
     let mut rng = rand::thread_rng();
 

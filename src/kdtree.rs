@@ -16,37 +16,36 @@ impl Algorithm for KDTree {
 }
 
 impl KDTree {
-    pub fn load(data: HashMap<String, Vec<f32>>) -> Self {
-        // ? : can we avoid maintaining multiple copies of data here
-        let points: Vec<TreeItem> = data
+    pub fn load(data: &HashMap<String, Vec<f32>>) -> Self {
+        let mut points: Vec<TreeItem> = data
             .iter()
             .map(|(word, vector)| TreeItem(vector.clone(), word.clone()))
             .collect();
 
-        let tree = Self::build(points, 0);
-        Self { map: data, tree }
+        let num_dimensions = points[0].0.len();
+        let tree = Self::build(&mut points, 0, num_dimensions);
+        Self {
+            map: data.clone(),
+            tree,
+        }
     }
 
-    fn build(mut points: Vec<TreeItem>, depth: usize) -> BinaryTree<TreeItem> {
+    fn build(points: &mut [TreeItem], depth: usize, num_dimensions: usize) -> BinaryTree<TreeItem> {
         if points.is_empty() {
             BinaryTree(None)
         } else {
-            let num_dimensions = points[0].0.len();
             let axis = depth % num_dimensions;
-
-            // todo: improve perf & memory usage here
-
             points.sort_by(|a, b| a.0[axis].partial_cmp(&b.0[axis]).unwrap());
 
             let median_idx = points.len() / 2;
 
-            let (left, right) = points.split_at(median_idx);
-            let (value, right) = right.split_first().unwrap();
+            let (left, right) = points.split_at_mut(median_idx);
+            let (value, right) = right.split_first_mut().unwrap();
 
             BinaryTree(Some(Box::new(Node {
                 value: value.to_owned(),
-                left: Self::build(left.to_vec(), depth + 1),
-                right: Self::build(right.to_vec(), depth + 1),
+                left: Self::build(left, depth + 1, num_dimensions),
+                right: Self::build(right, depth + 1, num_dimensions),
             })))
         }
     }
@@ -94,7 +93,7 @@ impl KDTree {
 struct TreeItem(Vec<f32>, String);
 
 #[derive(Debug)]
-struct HeapItem<'a>(f32, &'a String);
+struct HeapItem<'a>(f32, &'a str);
 
 impl PartialEq for HeapItem<'_> {
     fn eq(&self, other: &Self) -> bool {

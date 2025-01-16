@@ -41,13 +41,13 @@ impl Algorithm for Exact {
 }
 
 impl Exact {
-    pub fn load(data: HashMap<String, Vec<f32>>) -> Self {
-        Self { data }
+    pub fn load(data: &HashMap<String, Vec<f32>>) -> Self {
+        Self { data: data.clone() }
     }
 }
 
 #[derive(Debug)]
-struct HeapItem<'a>(f32, &'a String);
+struct HeapItem<'a>(f32, &'a str);
 
 impl PartialEq for HeapItem<'_> {
     fn eq(&self, other: &Self) -> bool {

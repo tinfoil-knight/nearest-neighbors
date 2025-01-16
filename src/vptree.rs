@@ -18,14 +18,17 @@ impl Algorithm for VPTree {
 }
 
 impl VPTree {
-    pub fn load(data: HashMap<String, Vec<f32>>) -> Self {
+    pub fn load(data: &HashMap<String, Vec<f32>>) -> Self {
         let points: Vec<(Vec<f32>, String)> = data
             .iter()
             .map(|(word, vector)| (vector.clone(), word.clone()))
             .collect();
 
         let tree = Self::build(points);
-        Self { map: data, tree }
+        Self {
+            map: data.clone(),
+            tree,
+        }
     }
 
     fn build(mut points: Vec<(Vec<f32>, String)>) -> BinaryTree<TreeItem> {
@@ -36,7 +39,7 @@ impl VPTree {
         let select_vp =
             |s: &[(Vec<f32>, String)]| -> usize { rand::thread_rng().gen_range(0..s.len()) };
 
-        let vantage_pt = points.remove(select_vp(&points));
+        let vantage_pt = points.swap_remove(select_vp(&points));
 
         if points.is_empty() {
             return BinaryTree(Some(Box::new(Node {
@@ -131,7 +134,7 @@ impl VPTree {
 struct TreeItem(f32, Vec<f32>, String);
 
 #[derive(Debug)]
-struct HeapItem<'a>(f32, (&'a Vec<f32>, &'a String));
+struct HeapItem<'a>(f32, (&'a Vec<f32>, &'a str));
 
 impl PartialEq for HeapItem<'_> {
     fn eq(&self, other: &Self) -> bool {

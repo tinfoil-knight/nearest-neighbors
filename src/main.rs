@@ -13,7 +13,7 @@ fn main() {
         .map_or("--exact", |v| v)
         .strip_prefix("--")
         .map_or("exact", |v| v);
-    let algorithm = get_search_algorithm(flag, data);
+    let algorithm = get_search_algorithm(flag, &data);
     let results = algorithm.search("happy", 5);
     println!("Results: {:?}", results);
 }
