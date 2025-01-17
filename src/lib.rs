@@ -7,10 +7,12 @@ use std::{
 
 pub mod exact;
 pub mod kdtree;
+pub mod lsh;
 pub mod vptree;
 
 use exact::Exact;
 use kdtree::KDTree;
+use lsh::LSH;
 use vptree::VPTree;
 
 pub trait Algorithm {
@@ -25,6 +27,7 @@ pub fn get_search_algorithm<'a>(
         "exact" => Box::new(Exact::load(data)),
         "kdtree" => Box::new(KDTree::load(data)),
         "vptree" => Box::new(VPTree::load(data)),
+        "lsh" => Box::new(LSH::load(data)),
         _ => Box::new(Exact::load(data)),
     }
 }
@@ -131,6 +134,10 @@ pub fn distance(x: &[f32], y: &[f32]) -> f32 {
         .map(|(a, b)| f32::powi(a - b, 2))
         .sum::<f32>()
         .sqrt()
+}
+
+pub fn dot_product(x: &[f32], y: &[f32]) -> f32 {
+    x.iter().zip(y.iter()).map(|(a, b)| a * b).sum()
 }
 
 #[cfg(test)]

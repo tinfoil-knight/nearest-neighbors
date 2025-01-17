@@ -3,7 +3,7 @@ use std::{
     collections::HashMap,
 };
 
-use crate::{Algorithm, LimitedHeap};
+use crate::{dot_product, Algorithm, LimitedHeap};
 
 pub struct Exact {
     data: HashMap<String, Vec<f32>>,
@@ -20,7 +20,7 @@ impl Algorithm for Exact {
                 let cosine_similarity: f32 = if a_mag == 0.0 || b_mag == 0.0 {
                     0.0
                 } else {
-                    let dot_product: f32 = a.iter().zip(b.iter()).map(|(x, y)| x * y).sum();
+                    let dot_product: f32 = dot_product(a, b);
                     dot_product / (a_mag * b_mag)
                 };
 
