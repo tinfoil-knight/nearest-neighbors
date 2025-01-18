@@ -31,8 +31,8 @@ impl Algorithm for Exact {
                 None
             } else {
                 let mut v: Vec<&HeapItem> = k_min_heap.iter().map(|Reverse(item)| item).collect();
-                v.sort_by(|a, b| b.cmp(a));
-                Some(v.iter().map(|x| x.1.to_owned()).collect())
+                v.sort();
+                Some(v.iter().rev().map(|x| x.1.to_owned()).collect())
             }
         } else {
             None
