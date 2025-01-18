@@ -3,9 +3,7 @@ use rand::seq::IteratorRandom;
 
 use nearest_neighbors::{load_dataset, Algorithm};
 
-use nearest_neighbors::exact::Exact;
-use nearest_neighbors::kdtree::KDTree;
-use nearest_neighbors::vptree::VPTree;
+use nearest_neighbors::{exact::Exact, kdtree::KDTree, lsh::LSH, vptree::VPTree};
 
 fn bench_search(c: &mut Criterion) {
     let mut group = c.benchmark_group("Method::Search");
@@ -19,7 +17,12 @@ fn bench_search(c: &mut Criterion) {
 
     let k = 5; // no. of neighbours
 
-    let (exact, kdtree, vptree) = (Exact::load(&data), KDTree::load(&data), VPTree::load(&data));
+    let (exact, kdtree, vptree, lsh) = (
+        Exact::load(&data),
+        KDTree::load(&data),
+        VPTree::load(&data),
+        LSH::load(&data),
+    );
 
     let mut rng = rand::thread_rng();
 
@@ -41,6 +44,13 @@ fn bench_search(c: &mut Criterion) {
         b.iter(|| {
             let key = query_keys.iter().choose(&mut rng).unwrap();
             vptree.search(key, k)
+        })
+    });
+
+    group.bench_function("LSH", |b| {
+        b.iter(|| {
+            let key = query_keys.iter().choose(&mut rng).unwrap();
+            lsh.search(key, k)
         })
     });
 

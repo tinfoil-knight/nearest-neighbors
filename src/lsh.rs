@@ -41,7 +41,7 @@ impl LSH {
     pub fn load(data: &HashMap<String, Vec<f32>>) -> Self {
         let dimensionality = data.iter().next().unwrap().1.len();
         let mut rng = rand::thread_rng();
-        let nbits = 32;
+        let nbits = 20;
 
         // norms of random hyperplanes
         let plane_norms: Vec<Vec<f32>> = (0..nbits)
