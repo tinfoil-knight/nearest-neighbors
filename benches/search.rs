@@ -1,4 +1,4 @@
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use rand::seq::IteratorRandom;
 
 use nearest_neighbors::{load_dataset, Algorithm};
@@ -15,8 +15,6 @@ fn bench_search(c: &mut Criterion) {
         .keys()
         .choose_multiple(&mut rand::thread_rng(), data.len() / 5);
 
-    let k = 5; // no. of neighbours
-
     let (exact, kdtree, vptree, lsh) = (
         Exact::load(&data),
         KDTree::load(&data),
@@ -26,33 +24,23 @@ fn bench_search(c: &mut Criterion) {
 
     let mut rng = rand::thread_rng();
 
-    group.bench_function("Exact", |b| {
-        b.iter(|| {
-            let key = query_keys.iter().choose(&mut rng).unwrap();
-            exact.search(key, k)
-        })
-    });
+    for k in [1, 5, 10, 20, 50, 100].iter() {
+        group.bench_with_input(BenchmarkId::new("Exact", k), k, |b, k| {
+            b.iter(|| exact.search(query_keys.iter().choose(&mut rng).unwrap(), *k))
+        });
 
-    group.bench_function("KDTree", |b| {
-        b.iter(|| {
-            let key = query_keys.iter().choose(&mut rng).unwrap();
-            kdtree.search(key, k)
-        })
-    });
+        group.bench_with_input(BenchmarkId::new("KDTree", k), k, |b, k| {
+            b.iter(|| kdtree.search(query_keys.iter().choose(&mut rng).unwrap(), *k))
+        });
 
-    group.bench_function("VPTree", |b| {
-        b.iter(|| {
-            let key = query_keys.iter().choose(&mut rng).unwrap();
-            vptree.search(key, k)
-        })
-    });
+        group.bench_with_input(BenchmarkId::new("VPTree", k), k, |b, k| {
+            b.iter(|| vptree.search(query_keys.iter().choose(&mut rng).unwrap(), *k))
+        });
 
-    group.bench_function("LSH", |b| {
-        b.iter(|| {
-            let key = query_keys.iter().choose(&mut rng).unwrap();
-            lsh.search(key, k)
-        })
-    });
+        group.bench_with_input(BenchmarkId::new("LSH", k), k, |b, k| {
+            b.iter(|| lsh.search(query_keys.iter().choose(&mut rng).unwrap(), *k))
+        });
+    }
 
     group.finish();
 }

@@ -8,6 +8,10 @@ Collection of algorithms to find the k-nearest neighbors in a vector dataset.
 - Vantage-Point / VP Tree
 - Locality Sensitive Hashing w/ Random Projection
 
+## Benchmarking
+
+// TODO
+
 ## Author
 
 - Kunal Kundu - [@tinfoil-knight](https://github.com/tinfoil-knight)
