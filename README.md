@@ -8,9 +8,38 @@ Collection of algorithms to find the k-nearest neighbors in a vector dataset.
 - Vantage-Point / VP Tree
 - Locality Sensitive Hashing w/ Random Projection
 
-## Benchmarking
+## Usage
 
-// TODO
+For compatibility, your dataset should be in this format:
+
+```
+<token_1> <value_1> <value_2> <value_3> ... <value_n>
+<token_2> .  .  .  .
+ .
+ .
+ .
+ .
+```
+
+where value_1-n are 32-bit floats that form a vector corresponding to the token.
+
+### Running
+
+Either create a build using `cargo build --release` or use `cargo run` on your dataset.
+
+```
+nearest-neighbors [-a <algorithm>] --path <path> -q <query>
+```
+
+### Benchmarking
+
+The benchmark expect an env variable `DATASET_PATH` pointing to your dataset.
+
+```
+cargo bench
+```
+
+This will generate a report at `./target/criterion/report/index.html`.
 
 ## Author
 

@@ -1,3 +1,5 @@
+use std::env;
+
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use rand::seq::IteratorRandom;
 
@@ -7,8 +9,8 @@ use nearest_neighbors::{exact::Exact, kdtree::KDTree, lsh::LSH, vptree::VPTree};
 
 fn bench_search(c: &mut Criterion) {
     let mut group = c.benchmark_group("Method::Search");
-
-    let data = load_dataset("./datasets/glove.twitter.27B.25d.txt").unwrap();
+    let path = env::var("DATASET_PATH").expect("env DATASET_PATH should be set");
+    let data = load_dataset(&path).unwrap();
     println!("Loaded dataset. Found {} vectors.", data.len());
 
     let query_keys = data
