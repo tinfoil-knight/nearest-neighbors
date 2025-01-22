@@ -5,53 +5,50 @@ use std::{
 
 use rand::Rng;
 
-use crate::{dot_product, Algorithm};
+use crate::{dot_product, Algorithm, VectorID};
 
 type Hash = Vec<u8>;
 type PlaneNorm = Vec<f32>;
 
 pub struct LSH {
-    data: HashMap<String, Vec<f32>>,
-    buckets: HashMap<Hash, Vec<String>>,
+    buckets: HashMap<Hash, Vec<VectorID>>,
     plane_norms: Vec<PlaneNorm>,
 }
 
 impl Algorithm for LSH {
-    fn search(&self, query: &str, k: usize) -> Option<Vec<String>> {
-        self.data.get(query).map(|v| {
-            let hash = Self::hash(&self.plane_norms, v);
+    fn search(&self, query: &[f32], k: usize) -> Vec<VectorID> {
+        let hash = Self::hash(&self.plane_norms, query);
 
-            let mut heap: BinaryHeap<Reverse<(usize, &Hash)>> = BinaryHeap::new();
+        let mut heap: BinaryHeap<Reverse<(usize, &Hash)>> = BinaryHeap::new();
 
-            self.buckets
-                .keys()
-                .for_each(|k| heap.push(Reverse((Self::hamming_distance(&hash, k), k))));
+        self.buckets
+            .keys()
+            .for_each(|k| heap.push(Reverse((Self::hamming_distance(&hash, k), k))));
 
-            let mut result: Vec<String> = Vec::new();
-            while let Some(Reverse((_, hash))) = heap.pop() {
-                result.extend(self.buckets.get(hash).unwrap().clone().into_iter());
-                if result.len() >= k {
-                    break;
-                }
+        let mut result: Vec<VectorID> = Vec::new();
+        while let Some(Reverse((_, hash))) = heap.pop() {
+            result.extend(self.buckets.get(hash).unwrap().iter());
+            if result.len() >= k {
+                break;
             }
+        }
 
-            result.truncate(k);
-            result
-        })
+        result.truncate(k);
+        result
     }
 }
 
 impl LSH {
-    pub fn load(data: &HashMap<String, Vec<f32>>) -> Self {
-        let dimensionality = data.iter().next().unwrap().1.len();
-        let num_hyperplanes = 16; // max possible buckets = 2^num_hyperplanes
+    pub fn load(data: &[(VectorID, Vec<f32>)]) -> Self {
+        let dimensionality = data.first().unwrap().1.len();
+        let num_hyperplanes = 18; // max possible buckets = 2^num_hyperplanes
 
         // norms of random hyperplanes
         let plane_norms: Vec<Vec<f32>> = (0..num_hyperplanes)
             .map(|_| Self::generate_plane_norm(dimensionality))
             .collect();
 
-        let mut buckets: HashMap<Hash, Vec<String>> = HashMap::new();
+        let mut buckets: HashMap<Hash, Vec<VectorID>> = HashMap::new();
 
         for (key, vec) in data {
             let hash = Self::hash(&plane_norms, vec);
@@ -63,7 +60,6 @@ impl LSH {
         }
 
         Self {
-            data: data.clone(),
             buckets,
             plane_norms,
         }

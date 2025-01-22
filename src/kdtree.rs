@@ -1,32 +1,27 @@
-use std::{cmp::Ordering, collections::HashMap};
+use std::cmp::Ordering;
 
-use crate::{distance, Algorithm, BinaryTree, LimitedHeap, Node};
+use crate::{distance, Algorithm, BinaryTree, LimitedHeap, Node, VectorID};
 
 pub struct KDTree {
-    map: HashMap<String, Vec<f32>>,
     tree: BinaryTree<TreeItem>,
 }
 
 impl Algorithm for KDTree {
-    fn search(&self, query: &str, k: usize) -> Option<Vec<String>> {
-        self.map
-            .get(query)
-            .map(|target| self.nearest_neighbors(target, k))
+    fn search(&self, query: &[f32], k: usize) -> Vec<VectorID> {
+        self.nearest_neighbors(query, k)
     }
 }
 
 impl KDTree {
-    pub fn load(data: &HashMap<String, Vec<f32>>) -> Self {
+    pub fn load(data: &[(VectorID, Vec<f32>)]) -> Self {
         let mut points: Vec<TreeItem> = data
             .iter()
-            .map(|(word, vector)| TreeItem(vector.clone(), word.clone()))
+            .map(|(id, vector)| TreeItem(vector.clone(), *id))
             .collect();
 
         let num_dimensions = points[0].0.len();
-        let tree = Self::build(&mut points, 0, num_dimensions);
         Self {
-            map: data.clone(),
-            tree,
+            tree: Self::build(&mut points, 0, num_dimensions),
         }
     }
 
@@ -50,7 +45,7 @@ impl KDTree {
         }
     }
 
-    fn nearest_neighbors(&self, target: &[f32], k: usize) -> Vec<String> {
+    fn nearest_neighbors(&self, target: &[f32], k: usize) -> Vec<VectorID> {
         let num_dimensions = target.len();
 
         let mut k_max_heap: LimitedHeap<HeapItem> = LimitedHeap::new(k);
@@ -61,7 +56,7 @@ impl KDTree {
                 let axis = depth % num_dimensions;
                 let dist = distance(target, &point.value.0);
 
-                k_max_heap.push(HeapItem(dist, &point.value.1));
+                k_max_heap.push(HeapItem(dist, point.value.1));
 
                 let next_branch;
                 let opposite_branch;
@@ -85,31 +80,31 @@ impl KDTree {
 
         let mut v: Vec<&HeapItem> = k_max_heap.iter().collect();
         v.sort();
-        v.iter().map(|x| x.1.to_owned()).collect()
+        v.iter().map(|&HeapItem(_, id)| *id).collect()
     }
 }
 
 #[derive(Debug, Clone)]
-struct TreeItem(Vec<f32>, String);
+struct TreeItem(Vec<f32>, VectorID);
 
 #[derive(Debug)]
-struct HeapItem<'a>(f32, &'a str);
+struct HeapItem(f32, VectorID);
 
-impl PartialEq for HeapItem<'_> {
+impl PartialEq for HeapItem {
     fn eq(&self, other: &Self) -> bool {
         self.0 == other.0
     }
 }
 
-impl Eq for HeapItem<'_> {}
+impl Eq for HeapItem {}
 
-impl PartialOrd for HeapItem<'_> {
+impl PartialOrd for HeapItem {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl Ord for HeapItem<'_> {
+impl Ord for HeapItem {
     fn cmp(&self, other: &Self) -> Ordering {
         // ignoring NaN for f32
         self.0.partial_cmp(&other.0).unwrap()

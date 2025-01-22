@@ -1,5 +1,5 @@
 use std::{
-    collections::{BinaryHeap, HashMap},
+    collections::BinaryHeap,
     fs::File,
     io::{self, BufRead, BufReader},
     ops::{Deref, DerefMut},
@@ -15,13 +15,15 @@ use kdtree::KDTree;
 use lsh::LSH;
 use vptree::VPTree;
 
+pub type VectorID = usize;
+
 pub trait Algorithm {
-    fn search(&self, query: &str, k: usize) -> Option<Vec<String>>;
+    fn search(&self, query: &[f32], k: usize) -> Vec<VectorID>;
 }
 
 pub fn get_search_algorithm<'a>(
     flag: &str,
-    data: &'a HashMap<String, Vec<f32>>,
+    data: &[(VectorID, Vec<f32>)],
 ) -> Box<dyn Algorithm + 'a> {
     match flag {
         "exact" => Box::new(Exact::load(data)),
@@ -32,11 +34,11 @@ pub fn get_search_algorithm<'a>(
     }
 }
 
-pub fn load_dataset(path: &str) -> io::Result<HashMap<String, Vec<f32>>> {
+pub fn load_dataset(path: &str) -> io::Result<Vec<(String, Vec<f32>)>> {
     let input = File::open(path)?;
     let reader = BufReader::new(input);
 
-    let mut word_map = HashMap::new();
+    let mut data = Vec::new();
     let mut dimensions = 0;
 
     for line in reader.lines() {
@@ -56,11 +58,10 @@ pub fn load_dataset(path: &str) -> io::Result<HashMap<String, Vec<f32>>> {
         }
 
         assert_eq!(dimensions, vector.len());
-
-        word_map.insert(word.to_string(), vector);
+        data.push((word.to_owned(), vector))
     }
 
-    Ok(word_map)
+    Ok(data)
 }
 
 pub struct LimitedHeap<T> {

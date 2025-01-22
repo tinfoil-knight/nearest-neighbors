@@ -1,69 +1,60 @@
-use std::{
-    cmp::{Ordering, Reverse},
-    collections::HashMap,
-};
+use std::cmp::Ordering;
 
-use crate::{dot_product, Algorithm, LimitedHeap};
+use crate::{dot_product, Algorithm, LimitedHeap, VectorID};
 
 pub struct Exact {
-    data: HashMap<String, Vec<f32>>,
+    data: Vec<(VectorID, Vec<f32>)>,
 }
 
 impl Algorithm for Exact {
-    fn search(&self, query: &str, k: usize) -> Option<Vec<String>> {
-        if let Some(a) = self.data.get(query) {
-            let a_mag = a.iter().map(|x| x * x).sum::<f32>().sqrt();
-            let mut k_min_heap: LimitedHeap<Reverse<HeapItem>> = LimitedHeap::new(k);
+    fn search(&self, query: &[f32], k: usize) -> Vec<VectorID> {
+        let a_mag = query.iter().map(|x| x * x).sum::<f32>().sqrt();
+        let mut k_min_heap: LimitedHeap<HeapItem> = LimitedHeap::new(k);
 
-            for (key, b) in self.data.iter() {
-                let b_mag = b.iter().map(|x| x * x).sum::<f32>().sqrt();
-                let cosine_similarity: f32 = if a_mag == 0.0 || b_mag == 0.0 {
-                    0.0
-                } else {
-                    let dot_product: f32 = dot_product(a, b);
-                    dot_product / (a_mag * b_mag)
-                };
-
-                k_min_heap.push(Reverse(HeapItem(cosine_similarity, key)));
-            }
-
-            if k_min_heap.is_empty() {
-                None
+        for (key, b) in &self.data {
+            let b_mag = b.iter().map(|x| x * x).sum::<f32>().sqrt();
+            let cosine_similarity: f32 = if a_mag == 0.0 || b_mag == 0.0 {
+                0.0
             } else {
-                let mut v: Vec<&HeapItem> = k_min_heap.iter().map(|Reverse(item)| item).collect();
-                v.sort();
-                Some(v.iter().rev().map(|x| x.1.to_owned()).collect())
-            }
-        } else {
-            None
+                let dot_product: f32 = dot_product(query, b);
+                dot_product / (a_mag * b_mag)
+            };
+
+            k_min_heap.push(HeapItem(-1.0 * cosine_similarity, *key));
         }
+
+        let mut v: Vec<&HeapItem> = k_min_heap.iter().collect();
+        v.sort();
+        v.into_iter().map(|&HeapItem(_, id)| id).collect()
     }
 }
 
 impl Exact {
-    pub fn load(data: &HashMap<String, Vec<f32>>) -> Self {
-        Self { data: data.clone() }
+    pub fn load(data: &[(VectorID, Vec<f32>)]) -> Self {
+        Self {
+            data: data.to_vec(),
+        }
     }
 }
 
 #[derive(Debug)]
-struct HeapItem<'a>(f32, &'a str);
+struct HeapItem(f32, VectorID);
 
-impl PartialEq for HeapItem<'_> {
+impl PartialEq for HeapItem {
     fn eq(&self, other: &Self) -> bool {
         self.0 == other.0
     }
 }
 
-impl Eq for HeapItem<'_> {}
+impl Eq for HeapItem {}
 
-impl PartialOrd for HeapItem<'_> {
+impl PartialOrd for HeapItem {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl Ord for HeapItem<'_> {
+impl Ord for HeapItem {
     fn cmp(&self, other: &Self) -> Ordering {
         // ignoring NaN for f32
         self.0.partial_cmp(&other.0).unwrap()

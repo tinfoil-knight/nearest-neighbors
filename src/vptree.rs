@@ -1,45 +1,38 @@
 use core::f32;
-use std::{cmp::Ordering, collections::HashMap, f32::NAN};
+use std::{cmp::Ordering, f32::NAN};
 
-use crate::{distance, Algorithm, BinaryTree, LimitedHeap, Node};
+use crate::{distance, Algorithm, BinaryTree, LimitedHeap, Node, VectorID};
 use rand::Rng;
 
 pub struct VPTree {
-    map: HashMap<String, Vec<f32>>,
     tree: BinaryTree<TreeItem>,
 }
 
 impl Algorithm for VPTree {
-    fn search(&self, query: &str, k: usize) -> Option<Vec<String>> {
-        self.map
-            .get(query)
-            .map(|target| self.nearest_neighbors(target, k))
+    fn search(&self, query: &[f32], k: usize) -> Vec<VectorID> {
+        self.nearest_neighbors(query, k)
     }
 }
 
 impl VPTree {
-    pub fn load(data: &HashMap<String, Vec<f32>>) -> Self {
-        let points: Vec<(Vec<f32>, String)> = data
+    pub fn load(data: &[(VectorID, Vec<f32>)]) -> Self {
+        let points: Vec<(Vec<f32>, VectorID)> = data
             .iter()
-            .map(|(word, vector)| (vector.clone(), word.clone()))
+            .map(|(id, vector)| (vector.clone(), *id))
             .collect();
-
-        let tree = Self::build(points);
         Self {
-            map: data.clone(),
-            tree,
+            tree: Self::build(points),
         }
     }
 
-    fn build(mut points: Vec<(Vec<f32>, String)>) -> BinaryTree<TreeItem> {
+    fn build(mut points: Vec<(Vec<f32>, VectorID)>) -> BinaryTree<TreeItem> {
         if points.is_empty() {
             return BinaryTree(None);
         }
 
-        let select_vp =
-            |s: &[(Vec<f32>, String)]| -> usize { rand::thread_rng().gen_range(0..s.len()) };
+        let select_vp = |size: usize| -> usize { rand::thread_rng().gen_range(0..size) };
 
-        let vantage_pt = points.swap_remove(select_vp(&points));
+        let vantage_pt = points.swap_remove(select_vp(points.len()));
 
         if points.is_empty() {
             return BinaryTree(Some(Box::new(Node {
@@ -51,7 +44,7 @@ impl VPTree {
 
         let mut points_with_dist: Vec<TreeItem> = points
             .into_iter()
-            .map(|pt| TreeItem(distance(&vantage_pt.0, &pt.0), pt.0, pt.1))
+            .map(|(vector, id)| TreeItem(distance(&vantage_pt.0, &vector), vector, id))
             .collect();
 
         let median = |v: &[TreeItem]| -> f32 {
@@ -73,12 +66,12 @@ impl VPTree {
 
         BinaryTree(Some(Box::new(Node {
             value: TreeItem(mu, vantage_pt.0, vantage_pt.1),
-            left: Self::build(left.iter().map(|x| (x.1.clone(), x.2.clone())).collect()),
-            right: Self::build(right.iter().map(|x| (x.1.clone(), x.2.clone())).collect()),
+            left: Self::build(left.iter().map(|x| (x.1.clone(), x.2)).collect()),
+            right: Self::build(right.iter().map(|x| (x.1.clone(), x.2)).collect()),
         })))
     }
 
-    fn nearest_neighbors(&self, target: &[f32], k: usize) -> Vec<String> {
+    fn nearest_neighbors(&self, target: &[f32], k: usize) -> Vec<VectorID> {
         let mut tau = f32::INFINITY; // threshold distance for target
 
         let mut stack = vec![&self.tree];
@@ -92,7 +85,7 @@ impl VPTree {
             let d = distance(target, &node.value.1);
 
             if d < tau {
-                neighbors.push(HeapItem(d, (&node.value.1, &node.value.2)));
+                neighbors.push(HeapItem(d, (&node.value.1, node.value.2)));
                 let HeapItem(_, farthest_nearest_neighbor) = neighbors.peek().unwrap();
                 tau = distance(target, farthest_nearest_neighbor.0);
             }
@@ -126,15 +119,17 @@ impl VPTree {
 
         let mut v: Vec<&HeapItem> = neighbors.iter().collect();
         v.sort();
-        v.iter().map(|HeapItem(_, x)| x.1.to_owned()).collect()
+        v.into_iter()
+            .map(|&HeapItem(_, (_vector, id))| id)
+            .collect()
     }
 }
 
 #[derive(Debug, Clone)]
-struct TreeItem(f32, Vec<f32>, String);
+struct TreeItem(f32, Vec<f32>, VectorID);
 
 #[derive(Debug)]
-struct HeapItem<'a>(f32, (&'a Vec<f32>, &'a str));
+struct HeapItem<'a>(f32, (&'a [f32], VectorID));
 
 impl PartialEq for HeapItem<'_> {
     fn eq(&self, other: &Self) -> bool {
