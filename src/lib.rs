@@ -9,11 +9,13 @@ use std::{
 pub mod exact;
 pub mod kdtree;
 pub mod lsh;
+pub mod nsw;
 pub mod vptree;
 
 use exact::Exact;
 use kdtree::KDTree;
 use lsh::LSH;
+use nsw::NSW;
 use vptree::VPTree;
 
 pub type VectorID = usize;
@@ -31,6 +33,7 @@ pub fn get_search_algorithm<'a>(
         "kdtree" => Box::new(KDTree::load(data)),
         "vptree" => Box::new(VPTree::load(data)),
         "lsh" => Box::new(LSH::load(data)),
+        "nsw" => Box::new(NSW::load(data)),
         _ => Box::new(Exact::load(data)),
     }
 }
@@ -65,6 +68,7 @@ pub fn load_dataset(path: &str) -> io::Result<Vec<(String, Vec<f32>)>> {
     Ok(data)
 }
 
+#[derive(Debug)]
 pub struct LimitedHeap<T> {
     heap: BinaryHeap<T>,
     limit: usize,
