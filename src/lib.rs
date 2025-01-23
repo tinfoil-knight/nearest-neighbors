@@ -1,4 +1,5 @@
 use std::{
+    cmp::Ordering,
     collections::BinaryHeap,
     fs::File,
     io::{self, BufRead, BufReader},
@@ -77,6 +78,7 @@ impl<T: Ord> LimitedHeap<T> {
         }
     }
 
+    /// Push element to heap while maintaining its limited size
     pub fn push(&mut self, value: T) {
         if self.heap.len() < self.limit {
             self.heap.push(value);
@@ -100,6 +102,29 @@ impl<T> Deref for LimitedHeap<T> {
 impl<T> DerefMut for LimitedHeap<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.heap
+    }
+}
+
+#[derive(Debug)]
+pub struct HeapItem<T>(f32, T);
+
+impl<T> PartialEq for HeapItem<T> {
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
+    }
+}
+
+impl<T> Eq for HeapItem<T> {}
+
+impl<T> PartialOrd for HeapItem<T> {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl<T> Ord for HeapItem<T> {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.0.total_cmp(&other.0)
     }
 }
 

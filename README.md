@@ -28,18 +28,16 @@ where value_1-n are 32-bit floats that form a vector corresponding to the token.
 Either create a build using `cargo build --release` or use `cargo run` on your dataset.
 
 ```
-nearest-neighbors [-a <algorithm>] --path <path> -q <query>
+nearest-neighbors [-a <algorithm>] -q <query>
 ```
+
+> Use the `--path` flag or set the `DATASET_PATH` env var to specify the path of your dataset.
 
 ### Benchmarking
 
-The benchmark expect an env variable `DATASET_PATH` pointing to your dataset.
+Running `cargo bench` will generate a report at `./target/criterion/report/index.html`.
 
-```
-cargo bench
-```
-
-This will generate a report at `./target/criterion/report/index.html`.
+> The benchmarking script expects an env variable `DATASET_PATH` pointing to your dataset.
 
 ## Author
 

@@ -1,7 +1,7 @@
 use core::f32;
-use std::{cmp::Ordering, f32::NAN};
+use std::f32::NAN;
 
-use crate::{distance, Algorithm, BinaryTree, LimitedHeap, Node, VectorID};
+use crate::{distance, Algorithm, BinaryTree, HeapItem, LimitedHeap, Node, VectorID};
 use rand::Rng;
 
 pub struct VPTree {
@@ -75,7 +75,7 @@ impl VPTree {
         let mut tau = f32::INFINITY; // threshold distance for target
 
         let mut stack = vec![&self.tree];
-        let mut neighbors: LimitedHeap<HeapItem> = LimitedHeap::new(k);
+        let mut neighbors: LimitedHeap<HeapItem<(&[f32], VectorID)>> = LimitedHeap::new(k);
 
         while let Some(node) = stack.pop() {
             let Some(node) = &node.0 else {
@@ -117,7 +117,7 @@ impl VPTree {
             };
         }
 
-        let mut v: Vec<&HeapItem> = neighbors.iter().collect();
+        let mut v: Vec<&HeapItem<(&[f32], VectorID)>> = neighbors.iter().collect();
         v.sort();
         v.into_iter()
             .map(|&HeapItem(_, (_vector, id))| id)
@@ -127,27 +127,3 @@ impl VPTree {
 
 #[derive(Debug, Clone)]
 struct TreeItem(f32, Vec<f32>, VectorID);
-
-#[derive(Debug)]
-struct HeapItem<'a>(f32, (&'a [f32], VectorID));
-
-impl PartialEq for HeapItem<'_> {
-    fn eq(&self, other: &Self) -> bool {
-        self.0 == other.0
-    }
-}
-
-impl Eq for HeapItem<'_> {}
-
-impl PartialOrd for HeapItem<'_> {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for HeapItem<'_> {
-    fn cmp(&self, other: &Self) -> Ordering {
-        // ignoring NaN for f32
-        self.0.partial_cmp(&other.0).unwrap()
-    }
-}

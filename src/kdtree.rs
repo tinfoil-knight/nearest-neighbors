@@ -1,6 +1,4 @@
-use std::cmp::Ordering;
-
-use crate::{distance, Algorithm, BinaryTree, LimitedHeap, Node, VectorID};
+use crate::{distance, Algorithm, BinaryTree, HeapItem, LimitedHeap, Node, VectorID};
 
 pub struct KDTree {
     tree: BinaryTree<TreeItem>,
@@ -48,7 +46,7 @@ impl KDTree {
     fn nearest_neighbors(&self, target: &[f32], k: usize) -> Vec<VectorID> {
         let num_dimensions = target.len();
 
-        let mut k_max_heap: LimitedHeap<HeapItem> = LimitedHeap::new(k);
+        let mut k_max_heap: LimitedHeap<HeapItem<VectorID>> = LimitedHeap::new(k);
         let mut stack = vec![(&self.tree, 0)];
 
         while let Some((node, depth)) = stack.pop() {
@@ -78,7 +76,7 @@ impl KDTree {
             }
         }
 
-        let mut v: Vec<&HeapItem> = k_max_heap.iter().collect();
+        let mut v: Vec<&HeapItem<VectorID>> = k_max_heap.iter().collect();
         v.sort();
         v.iter().map(|&HeapItem(_, id)| *id).collect()
     }
@@ -86,27 +84,3 @@ impl KDTree {
 
 #[derive(Debug, Clone)]
 struct TreeItem(Vec<f32>, VectorID);
-
-#[derive(Debug)]
-struct HeapItem(f32, VectorID);
-
-impl PartialEq for HeapItem {
-    fn eq(&self, other: &Self) -> bool {
-        self.0 == other.0
-    }
-}
-
-impl Eq for HeapItem {}
-
-impl PartialOrd for HeapItem {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Ord for HeapItem {
-    fn cmp(&self, other: &Self) -> Ordering {
-        // ignoring NaN for f32
-        self.0.partial_cmp(&other.0).unwrap()
-    }
-}
