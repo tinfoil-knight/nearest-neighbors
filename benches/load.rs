@@ -2,13 +2,10 @@ use std::env;
 
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 
-use nearest_neighbors::exact::Exact;
-use nearest_neighbors::kdtree::KDTree;
 use nearest_neighbors::load_dataset;
 
-use nearest_neighbors::lsh::LSH;
-use nearest_neighbors::vptree::VPTree;
-use nearest_neighbors::{nsw::NSW, VectorID};
+use nearest_neighbors::VectorID;
+use nearest_neighbors::{exact::Exact, kdtree::KDTree, lsh::LSH, nsw::NSW, vptree::VPTree};
 
 fn bench_load(c: &mut Criterion) {
     let mut group = c.benchmark_group("Method::Load");
