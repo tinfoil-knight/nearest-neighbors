@@ -1,7 +1,7 @@
 use core::f32;
 use std::f32::NAN;
 
-use crate::{distance, Algorithm, BinaryTree, HeapItem, LimitedHeap, Node, VectorID};
+use crate::{distance, Algorithm, BinaryTree, OrdItem, LimitedHeap, Node, VectorID};
 use rand::Rng;
 
 pub struct VPTree {
@@ -75,7 +75,7 @@ impl VPTree {
         let mut tau = f32::INFINITY; // threshold distance for target
 
         let mut stack = vec![&self.tree];
-        let mut neighbors: LimitedHeap<HeapItem<(&[f32], VectorID)>> = LimitedHeap::new(k);
+        let mut neighbors: LimitedHeap<OrdItem<(&[f32], VectorID)>> = LimitedHeap::new(k);
 
         while let Some(node) = stack.pop() {
             let Some(node) = &node.0 else {
@@ -85,8 +85,8 @@ impl VPTree {
             let d = distance(target, &node.value.1);
 
             if d < tau {
-                neighbors.push(HeapItem(d, (&node.value.1, node.value.2)));
-                let HeapItem(_, farthest_nearest_neighbor) = neighbors.peek().unwrap();
+                neighbors.push(OrdItem(d, (&node.value.1, node.value.2)));
+                let OrdItem(_, farthest_nearest_neighbor) = neighbors.peek().unwrap();
                 tau = distance(target, farthest_nearest_neighbor.0);
             }
 
@@ -117,10 +117,10 @@ impl VPTree {
             };
         }
 
-        let mut v: Vec<&HeapItem<(&[f32], VectorID)>> = neighbors.iter().collect();
+        let mut v: Vec<&OrdItem<(&[f32], VectorID)>> = neighbors.iter().collect();
         v.sort();
         v.into_iter()
-            .map(|&HeapItem(_, (_vector, id))| id)
+            .map(|&OrdItem(_, (_vector, id))| id)
             .collect()
     }
 }

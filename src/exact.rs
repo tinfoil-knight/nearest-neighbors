@@ -1,4 +1,4 @@
-use crate::{dot_product, Algorithm, HeapItem, LimitedHeap, VectorID};
+use crate::{dot_product, Algorithm, LimitedHeap, OrdItem, VectorID};
 
 pub struct Exact {
     data: Vec<(VectorID, Vec<f32>)>,
@@ -7,7 +7,7 @@ pub struct Exact {
 impl Algorithm for Exact {
     fn search(&self, query: &[f32], k: usize) -> Vec<VectorID> {
         let a_mag = query.iter().map(|x| x * x).sum::<f32>().sqrt();
-        let mut k_min_heap: LimitedHeap<HeapItem<VectorID>> = LimitedHeap::new(k);
+        let mut k_min_heap: LimitedHeap<OrdItem<VectorID>> = LimitedHeap::new(k);
 
         for (key, b) in &self.data {
             let b_mag = b.iter().map(|x| x * x).sum::<f32>().sqrt();
@@ -18,12 +18,12 @@ impl Algorithm for Exact {
                 dot_product / (a_mag * b_mag)
             };
 
-            k_min_heap.push(HeapItem(-1.0 * cosine_similarity, *key));
+            k_min_heap.push(OrdItem(-1.0 * cosine_similarity, *key));
         }
 
-        let mut v: Vec<&HeapItem<VectorID>> = k_min_heap.iter().collect();
+        let mut v: Vec<&OrdItem<VectorID>> = k_min_heap.iter().collect();
         v.sort();
-        v.into_iter().map(|&HeapItem(_, id)| id).collect()
+        v.into_iter().map(|&OrdItem(_, id)| id).collect()
     }
 }
 

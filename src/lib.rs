@@ -109,24 +109,24 @@ impl<T> DerefMut for LimitedHeap<T> {
     }
 }
 
-#[derive(Debug)]
-pub struct HeapItem<T>(f32, T);
+#[derive(Debug, Clone, Copy)]
+pub struct OrdItem<T>(f32, T);
 
-impl<T> PartialEq for HeapItem<T> {
+impl<T> PartialEq for OrdItem<T> {
     fn eq(&self, other: &Self) -> bool {
         self.0 == other.0
     }
 }
 
-impl<T> Eq for HeapItem<T> {}
+impl<T> Eq for OrdItem<T> {}
 
-impl<T> PartialOrd for HeapItem<T> {
+impl<T> PartialOrd for OrdItem<T> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
         Some(self.cmp(other))
     }
 }
 
-impl<T> Ord for HeapItem<T> {
+impl<T> Ord for OrdItem<T> {
     fn cmp(&self, other: &Self) -> Ordering {
         self.0.total_cmp(&other.0)
     }

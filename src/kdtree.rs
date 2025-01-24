@@ -1,4 +1,4 @@
-use crate::{distance, Algorithm, BinaryTree, HeapItem, LimitedHeap, Node, VectorID};
+use crate::{distance, Algorithm, BinaryTree, OrdItem, LimitedHeap, Node, VectorID};
 
 pub struct KDTree {
     tree: BinaryTree<TreeItem>,
@@ -46,7 +46,7 @@ impl KDTree {
     fn nearest_neighbors(&self, target: &[f32], k: usize) -> Vec<VectorID> {
         let num_dimensions = target.len();
 
-        let mut k_max_heap: LimitedHeap<HeapItem<VectorID>> = LimitedHeap::new(k);
+        let mut k_max_heap: LimitedHeap<OrdItem<VectorID>> = LimitedHeap::new(k);
         let mut stack = vec![(&self.tree, 0)];
 
         while let Some((node, depth)) = stack.pop() {
@@ -54,7 +54,7 @@ impl KDTree {
                 let axis = depth % num_dimensions;
                 let dist = distance(target, &point.value.0);
 
-                k_max_heap.push(HeapItem(dist, point.value.1));
+                k_max_heap.push(OrdItem(dist, point.value.1));
 
                 let next_branch;
                 let opposite_branch;
@@ -76,9 +76,9 @@ impl KDTree {
             }
         }
 
-        let mut v: Vec<&HeapItem<VectorID>> = k_max_heap.iter().collect();
+        let mut v: Vec<&OrdItem<VectorID>> = k_max_heap.iter().collect();
         v.sort();
-        v.iter().map(|&HeapItem(_, id)| *id).collect()
+        v.iter().map(|&OrdItem(_, id)| *id).collect()
     }
 }
 
