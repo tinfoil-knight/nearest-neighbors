@@ -1,6 +1,6 @@
 use std::{
     cmp::max,
-    collections::{HashMap, HashSet},
+    collections::{BinaryHeap, HashMap, HashSet},
 };
 
 use rand::seq::IteratorRandom;
@@ -19,8 +19,8 @@ pub struct NSW {
 impl Algorithm for NSW {
     fn search(&self, query: &[f32], k: usize) -> Vec<VectorID> {
         self.multi_search(query, self.m, k)
-            .iter()
-            .map(|&OrdItem(_, id)| id)
+            .into_iter()
+            .map(|OrdItem(_, id)| id)
             .collect()
     }
 }
@@ -82,16 +82,8 @@ impl NSW {
             if visited.contains(entry_point) {
                 continue;
             }
-            let global_kth_best = if results.len() >= k {
-                results.peek().unwrap().0
-            } else {
-                f32::INFINITY
-            };
-            let local_best =
-                self.greedy_search(query, *entry_point, k, global_kth_best, &mut visited);
-            for pt in local_best {
-                results.push(pt);
-            }
+
+            self.greedy_search(query, *entry_point, k, &mut results, &mut visited);
 
             if visited.len() == self.graph.len() {
                 break;
@@ -106,23 +98,24 @@ impl NSW {
         query: &[f32],
         entry_point: VectorID,
         k: usize,
-        global_kth_best: f32,
+        results: &mut LimitedHeap<OrdItem<VectorID>>,
         visited: &mut HashSet<VectorID>,
-    ) -> Vec<OrdItem<VectorID>> {
-        let mut candidates = LimitedHeap::new(k);
-        let mut results = LimitedHeap::new(k);
+    ) {
+        let mut candidates = BinaryHeap::new();
 
-        let entry_item = OrdItem(self.metric(query, &entry_point), entry_point);
-        candidates.push(entry_item);
-        results.push(entry_item);
+        let metric = self.metric(query, &entry_point);
+        candidates.push(OrdItem(-metric, entry_point));
+        results.push(OrdItem(metric, entry_point));
 
-        while let Some(OrdItem(metric_cn, v_curr)) = candidates.pop() {
-            let local_kth_best = if results.len() >= k {
+        while let Some(best_candidate) = candidates.pop() {
+            let OrdItem(metric_cn, v_curr) = best_candidate;
+            let metric_cn = -1.0 * metric_cn;
+
+            let kth_best = if results.len() >= k {
                 results.peek().unwrap().0
             } else {
                 f32::INFINITY
             };
-            let kth_best = f32::min(global_kth_best, local_kth_best);
 
             if metric_cn > kth_best {
                 break;
@@ -135,7 +128,7 @@ impl NSW {
                 visited.insert(*v_friend);
                 let metric_fr = self.metric(query, v_friend);
 
-                candidates.push(OrdItem(metric_fr, *v_friend));
+                candidates.push(OrdItem(-metric_fr, *v_friend));
                 results.push(OrdItem(metric_fr, *v_friend));
             }
 
@@ -143,8 +136,6 @@ impl NSW {
                 break;
             }
         }
-
-        results.consume().into_vec()
     }
 
     fn metric(&self, query: &[f32], vertex: &VectorID) -> f32 {

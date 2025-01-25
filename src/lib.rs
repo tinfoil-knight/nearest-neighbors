@@ -1,6 +1,7 @@
 use std::{
     cmp::Ordering,
     collections::BinaryHeap,
+    fmt,
     fs::File,
     io::{self, BufRead, BufReader},
     ops::{Deref, DerefMut},
@@ -113,8 +114,14 @@ impl<T> DerefMut for LimitedHeap<T> {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub struct OrdItem<T>(f32, T);
+
+impl<T: fmt::Debug> fmt::Debug for OrdItem<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "({}, {:?})", self.0, self.1)
+    }
+}
 
 impl<T> PartialEq for OrdItem<T> {
     fn eq(&self, other: &Self) -> bool {
