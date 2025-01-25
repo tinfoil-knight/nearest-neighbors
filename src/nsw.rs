@@ -1,11 +1,11 @@
 use std::{
     cmp::max,
-    collections::{BTreeSet, HashMap, HashSet},
+    collections::{HashMap, HashSet},
 };
 
 use rand::seq::IteratorRandom;
 
-use crate::{distance, Algorithm, OrdItem, VectorID};
+use crate::{distance, Algorithm, LimitedHeap, OrdItem, VectorID};
 
 pub struct NSW {
     graph: HashMap<VectorID, Vec<VectorID>>,
@@ -17,10 +17,11 @@ pub struct NSW {
 }
 
 impl Algorithm for NSW {
-    fn search(&self, query: &[f32], _k: usize) -> Vec<VectorID> {
-        let k = 1;
-        let results = self.multi_search(query, self.m);
-        results.iter().take(k).map(|&OrdItem(_, id)| id).collect()
+    fn search(&self, query: &[f32], k: usize) -> Vec<VectorID> {
+        self.multi_search(query, self.m, k)
+            .iter()
+            .map(|&OrdItem(_, id)| id)
+            .collect()
     }
 }
 
@@ -35,13 +36,16 @@ impl NSW {
         };
 
         for item in data.iter() {
-            s.insert(item);
+            let k = 10;
+            let a = 1;
+            let w = a * max(1, max(1, s.graph.len()).ilog10());
+            s.insert(item, k, w as usize);
         }
 
         s
     }
 
-    pub fn insert(&mut self, object: &(VectorID, Vec<f32>)) {
+    pub fn insert(&mut self, object: &(VectorID, Vec<f32>), k: usize, w: usize) {
         assert_eq!(self.dimensionality, object.1.len());
 
         self.map.insert(object.0, object.1.clone());
@@ -50,8 +54,6 @@ impl NSW {
             self.graph.insert(object.0, vec![]);
             return;
         }
-
-        let k = 3 * self.dimensionality;
 
         if self.graph.len() <= k {
             let vertices: Vec<VectorID> = self.graph.keys().cloned().collect();
@@ -62,24 +64,16 @@ impl NSW {
             return;
         }
 
-        let a = 1;
-        let w = a * max(1, self.graph.len().ilog10()) as usize;
-        let local_mins = self.multi_search(&object.1, w);
-        let mut u = local_mins.clone();
-        for OrdItem(_, local_min) in local_mins {
-            for friend in self.get_friends(&local_min) {
-                u.insert(OrdItem(self.metric(&object.1, friend), *friend));
-            }
-        }
+        let u = self.multi_search(&object.1, w, k);
 
-        u.iter().take(k).for_each(|&OrdItem(_, v)| {
+        u.iter().for_each(|&OrdItem(_, v)| {
             self.graph.entry(v).and_modify(|e| e.push(object.0));
             self.graph.entry(object.0).or_default().push(v);
         });
     }
 
-    fn multi_search(&self, query: &[f32], m: usize) -> BTreeSet<OrdItem<VectorID>> {
-        let mut results = BTreeSet::new();
+    fn multi_search(&self, query: &[f32], m: usize, k: usize) -> Vec<OrdItem<VectorID>> {
+        let mut results: LimitedHeap<OrdItem<VectorID>> = LimitedHeap::new(k);
         let mut visited = HashSet::new();
 
         let entry_points = self
@@ -88,44 +82,53 @@ impl NSW {
             .choose_multiple(&mut rand::thread_rng(), m);
 
         for entry_point in entry_points {
-            let (metric, local_min) = self.greedy_search(query, *entry_point, &mut visited);
-            results.insert(OrdItem(metric, local_min));
+            if visited.contains(entry_point) {
+                continue;
+            }
+
+            let local_best = self.greedy_search(query, *entry_point, k, &mut visited);
+            for pt in local_best {
+                results.push(pt);
+            }
+
+            if visited.len() == self.graph.len() {
+                break;
+            }
         }
 
-        results
+        results.consume().into_sorted_vec()
     }
 
     fn greedy_search(
         &self,
         query: &[f32],
         entry_point: VectorID,
+        k: usize,
         visited: &mut HashSet<VectorID>,
-    ) -> (f32, VectorID) {
-        let mut v_curr = entry_point;
-        let mut min_metric = self.metric(query, &v_curr);
+    ) -> Vec<OrdItem<VectorID>> {
+        let mut candidates = LimitedHeap::new(k);
+        let mut results = LimitedHeap::new(k);
 
-        let mut v_next = v_curr;
+        candidates.push(OrdItem(self.metric(query, &entry_point), entry_point));
+        results.push(OrdItem(self.metric(query, &entry_point), entry_point));
 
-        loop {
+        while let Some(OrdItem(_, v_curr)) = candidates.pop() {
             for v_friend in self.get_friends(&v_curr) {
                 if !visited.insert(*v_friend) {
                     continue;
                 }
                 let metric_fr = self.metric(query, v_friend);
 
-                if metric_fr < min_metric {
-                    min_metric = metric_fr;
-                    v_next = *v_friend;
-                }
+                candidates.push(OrdItem(metric_fr, *v_friend));
+                results.push(OrdItem(metric_fr, *v_friend));
             }
 
-            if v_next == v_curr || visited.len() == self.graph.len() {
+            if visited.len() == self.graph.len() {
                 break;
             }
-            v_curr = v_next;
         }
 
-        (min_metric, v_curr)
+        results.consume().into_vec()
     }
 
     fn metric(&self, query: &[f32], vertex: &VectorID) -> f32 {

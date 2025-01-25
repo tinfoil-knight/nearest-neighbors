@@ -55,6 +55,7 @@ Distributed under the MIT License. See [LICENSE](./LICENSE) for more information
 - [Similarity search 101 - Part 2 (Fast retrieval with vp-trees)](https://everyhue.me/posts/similarity-search-101-with-vantage-point-trees/)
 - [Introduction to Locality-Sensitive Hashing](https://tylerneylon.com/a/lsh1/)
 - Malkov, Yu & Ponomarenko, Alexander & Logvinov, Andrey & Krylov, Vladimir. 2012. [Scalable Distributed Algorithm for Approximate Nearest Neighbor Search Problem in High Dimensional General Metric Spaces](https://publications.hse.ru/pubs/share/folder/sft9tib7l3/95940707.pdf)
+- https://github.com/dkohlsdorf/NSWG
 
 ## Datasets
 

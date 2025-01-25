@@ -89,9 +89,13 @@ impl<T: Ord> LimitedHeap<T> {
         } else if let Some(top) = self.heap.peek() {
             if &value < top {
                 self.heap.pop();
-                self.heap.push(value)
+                self.heap.push(value);
             }
         }
+    }
+
+    pub fn consume(self) -> BinaryHeap<T> {
+        self.heap
     }
 }
 
