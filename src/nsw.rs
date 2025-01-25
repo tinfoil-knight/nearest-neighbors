@@ -75,18 +75,20 @@ impl NSW {
     fn multi_search(&self, query: &[f32], m: usize, k: usize) -> Vec<OrdItem<VectorID>> {
         let mut results: LimitedHeap<OrdItem<VectorID>> = LimitedHeap::new(k);
         let mut visited = HashSet::new();
+        let mut rng = rand::thread_rng();
 
-        let entry_points = self
-            .graph
-            .keys()
-            .choose_multiple(&mut rand::thread_rng(), m);
-
-        for entry_point in entry_points {
+        for _ in 0..m {
+            let entry_point = self.graph.keys().choose(&mut rng).unwrap();
             if visited.contains(entry_point) {
                 continue;
             }
-
-            let local_best = self.greedy_search(query, *entry_point, k, &mut visited);
+            let global_kth_best = if results.len() >= k {
+                results.peek().unwrap().0
+            } else {
+                f32::INFINITY
+            };
+            let local_best =
+                self.greedy_search(query, *entry_point, k, global_kth_best, &mut visited);
             for pt in local_best {
                 results.push(pt);
             }
@@ -104,19 +106,33 @@ impl NSW {
         query: &[f32],
         entry_point: VectorID,
         k: usize,
+        global_kth_best: f32,
         visited: &mut HashSet<VectorID>,
     ) -> Vec<OrdItem<VectorID>> {
         let mut candidates = LimitedHeap::new(k);
         let mut results = LimitedHeap::new(k);
 
-        candidates.push(OrdItem(self.metric(query, &entry_point), entry_point));
-        results.push(OrdItem(self.metric(query, &entry_point), entry_point));
+        let entry_item = OrdItem(self.metric(query, &entry_point), entry_point);
+        candidates.push(entry_item);
+        results.push(entry_item);
 
-        while let Some(OrdItem(_, v_curr)) = candidates.pop() {
+        while let Some(OrdItem(metric_cn, v_curr)) = candidates.pop() {
+            let local_kth_best = if results.len() >= k {
+                results.peek().unwrap().0
+            } else {
+                f32::INFINITY
+            };
+            let kth_best = f32::min(global_kth_best, local_kth_best);
+
+            if metric_cn > kth_best {
+                break;
+            }
+
             for v_friend in self.get_friends(&v_curr) {
-                if !visited.insert(*v_friend) {
+                if visited.contains(v_friend) {
                     continue;
                 }
+                visited.insert(*v_friend);
                 let metric_fr = self.metric(query, v_friend);
 
                 candidates.push(OrdItem(metric_fr, *v_friend));

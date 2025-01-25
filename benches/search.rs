@@ -5,7 +5,9 @@ use rand::seq::SliceRandom;
 
 use nearest_neighbors::{load_dataset, Algorithm};
 
-use nearest_neighbors::{exact::Exact, kdtree::KDTree, lsh::LSH, vptree::VPTree, VectorID};
+use nearest_neighbors::{
+    exact::Exact, kdtree::KDTree, lsh::LSH, nsw::NSW, vptree::VPTree, VectorID,
+};
 
 fn bench_search(c: &mut Criterion) {
     let mut group = c.benchmark_group("Method::Search");
@@ -23,11 +25,12 @@ fn bench_search(c: &mut Criterion) {
         .map(|x| x.1.clone())
         .collect();
 
-    let (exact, kdtree, vptree, lsh) = (
+    let (exact, kdtree, vptree, lsh, nsw) = (
         Exact::load(&data),
         KDTree::load(&data),
         VPTree::load(&data),
         LSH::load(&data),
+        NSW::load(&data),
     );
 
     let mut rng = rand::thread_rng();
@@ -47,6 +50,10 @@ fn bench_search(c: &mut Criterion) {
 
         group.bench_with_input(BenchmarkId::new("LSH", k), k, |b, k| {
             b.iter(|| lsh.search(query_keys.choose(&mut rng).unwrap(), *k))
+        });
+
+        group.bench_with_input(BenchmarkId::new("NSW", k), k, |b, k| {
+            b.iter(|| nsw.search(query_keys.choose(&mut rng).unwrap(), *k))
         });
     }
 
