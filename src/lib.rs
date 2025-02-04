@@ -7,6 +7,8 @@ use std::{
     ops::{Deref, DerefMut},
 };
 
+use simsimd::SpatialSimilarity;
+
 pub mod exact;
 pub mod kdtree;
 pub mod lsh;
@@ -170,15 +172,15 @@ impl<T> BinaryTree<T> {
 }
 
 pub fn distance(x: &[f32], y: &[f32]) -> f32 {
-    x.iter()
-        .zip(y.iter())
-        .map(|(a, b)| f32::powi(a - b, 2))
-        .sum::<f32>()
-        .sqrt()
+    f32::sqeuclidean(x, y).unwrap() as f32
 }
 
 pub fn dot_product(x: &[f32], y: &[f32]) -> f32 {
-    x.iter().zip(y.iter()).map(|(a, b)| a * b).sum()
+    f32::dot(x, y).unwrap() as f32
+}
+
+pub fn cosine_similarity(x: &[f32], y: &[f32]) -> f32 {
+    f32::cosine(x, y).unwrap() as f32
 }
 
 #[cfg(test)]
