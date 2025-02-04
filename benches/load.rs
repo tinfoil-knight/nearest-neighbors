@@ -19,7 +19,7 @@ fn bench_load(c: &mut Criterion) {
         .map(|(idx, (_str, vector))| (idx, vector))
         .collect();
 
-    data.truncate(50_000);
+    data.truncate(200_000);
 
     let l = data.len();
 

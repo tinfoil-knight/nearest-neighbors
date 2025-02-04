@@ -3,22 +3,22 @@ use std::{
     collections::{BinaryHeap, HashMap, HashSet},
 };
 
-use rand::seq::IteratorRandom;
+use rand::seq::SliceRandom;
 
 use crate::{distance, Algorithm, LimitedHeap, OrdItem, VectorID};
 
 pub struct NSW {
     graph: HashMap<VectorID, Vec<VectorID>>,
     map: HashMap<VectorID, Vec<f32>>,
+    index: Vec<VectorID>,
     dimensionality: usize,
-    /// no. of search attempts
-    /// failure probability decreases exponentially as m increases
-    m: usize,
 }
 
 impl Algorithm for NSW {
     fn search(&self, query: &[f32], k: usize) -> Vec<VectorID> {
-        self.multi_search(query, self.m, k)
+        let a = 1;
+        let w = a * max(1, max(1, self.graph.len()).ilog10());
+        self.multi_search(query, w as usize, k)
             .into_iter()
             .map(|OrdItem(_, id)| id)
             .collect()
@@ -31,15 +31,18 @@ impl NSW {
         let mut s = NSW {
             graph: HashMap::with_capacity(data.len()),
             map: HashMap::with_capacity(data.len()),
+            index: Vec::with_capacity(data.len()),
             dimensionality,
-            m: 5,
         };
 
         for item in data.iter() {
             let k = 10;
             let a = 1;
+            // no. of search attempts
+            // failure probability decreases exponentially as no. of search attempts increases
             let w = a * max(1, max(1, s.graph.len()).ilog10());
             s.insert(item, k, w as usize);
+            s.index.push(item.0);
         }
 
         s
@@ -78,7 +81,7 @@ impl NSW {
         let mut rng = rand::thread_rng();
 
         for _ in 0..m {
-            let entry_point = self.graph.keys().choose(&mut rng).unwrap();
+            let entry_point = self.index.choose(&mut rng).unwrap();
             if visited.contains(entry_point) {
                 continue;
             }
