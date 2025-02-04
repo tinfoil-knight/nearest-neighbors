@@ -11,6 +11,10 @@ lto = "fat"
 opt-level = 3
 codegen-units = 1
 
+# For profiling
+# [profile.release]
+# debug = true
+
 [dependencies]
 argh = "0.1.13"
 rand = { version = "0.8", features = ["alloc"] }

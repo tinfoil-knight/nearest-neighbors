@@ -50,12 +50,12 @@ Distributed under the MIT License. See [LICENSE](./LICENSE) for more information
 
 ## References
 
-- [K-d Trees - Computerphile](https://www.youtube.com/watch?v=BK5x7IUTIyU)
-- [VP trees: A data structure for finding stuff fast](https://stevehanov.ca/blog/index.php?id=130)
-- [Similarity search 101 - Part 2 (Fast retrieval with vp-trees)](https://everyhue.me/posts/similarity-search-101-with-vantage-point-trees/)
-- [Introduction to Locality-Sensitive Hashing](https://tylerneylon.com/a/lsh1/)
+- Computerphile. 2022. [K-d Trees - Computerphile](https://www.youtube.com/watch?v=BK5x7IUTIyU)
+- Steve Hanov. 2011. [VP trees: A data structure for finding stuff fast](https://stevehanov.ca/blog/index.php?id=130)
+- Huy Nguyen. 2014. [Similarity search 101 - Part 2 (Fast retrieval with vp-trees)](https://everyhue.me/posts/similarity-search-101-with-vantage-point-trees/)
+- Tyler Neylon. 2018. [Introduction to Locality-Sensitive Hashing](https://tylerneylon.com/a/lsh1/)
 - Malkov, Yu & Ponomarenko, Alexander & Logvinov, Andrey & Krylov, Vladimir. 2012. [Scalable Distributed Algorithm for Approximate Nearest Neighbor Search Problem in High Dimensional General Metric Spaces](https://publications.hse.ru/pubs/share/folder/sft9tib7l3/95940707.pdf)
-- https://github.com/dkohlsdorf/NSWG
+- Daniel Kohlsdorf. 2019. [NSWG](https://github.com/dkohlsdorf/NSWG)
 
 ## Datasets
 
